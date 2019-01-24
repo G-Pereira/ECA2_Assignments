@@ -86,3 +86,7 @@ incremental_db/
 output_files/
 work/
 vhdl/
+
+# File associations related to Haskell
+*.hi
+*.o
