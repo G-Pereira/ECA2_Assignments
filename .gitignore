@@ -69,3 +69,20 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 \.idea/
+
+# File associations related to quartus
+*.bak
+*.swp
+*.mpf
+*.mti
+*.wlf
+*~
+c5_pin_model_dump.txt
+*_description.txt
+Framing/synchronising/transcript
+simulation/
+db/
+incremental_db/
+output_files/
+work/
+vhdl/
