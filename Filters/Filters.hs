@@ -12,8 +12,8 @@ type Sig = Signal System
 --    lastname: Pereira
 --    student number: s2203731
 --  Student 2
---    lastname:
---    student number:
+--    lastname: Jonkman
+--    student number: s1563599
 
 -- NOTE: topentity functions are at the bottom
 -- comment and uncomment the functions for each assignment
