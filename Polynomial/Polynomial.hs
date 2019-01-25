@@ -60,7 +60,7 @@ f0hof x = foldl (helper x) ((2+x) :: Value) (6:>6:>8:>Nil)
 f0helper s (x, y) = (s', z)
   where
     s'= z*(x+y)
-    z = s'
+    z = s
 
 f0mealy x = mealy f0helper 1 x
 
