@@ -17,7 +17,7 @@ type Vector = Vec 3 Value
 -- Student information:
 --  Student 1
 --    Pereira
---    s
+--    s2203731
 --  Student 2
 --    Jonkman
 --    s1563599

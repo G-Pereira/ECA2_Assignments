@@ -9,8 +9,8 @@ type Sig = Signal System
 
 -- Student information:
 --  Student 1
---    lastname:
---    student number:
+--    lastname: Pereira
+--    student number: s2203731
 --  Student 2
 --    lastname:
 --    student number:
