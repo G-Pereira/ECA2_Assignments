@@ -11,6 +11,11 @@ module CCenterOfMass where
 import Clash.Prelude
 import Image
 
+type Clk = Clock System Source
+type Rst = Reset System Asynchronous
+type Sig = Signal System
+data StateCOM = CalCOMRows | CalCOMCols
+
 -----------------------------------------------------------------------------------------
 -- Assignment 4, Changing a pixel in a picture
 -----------------------------------------------------------------------------------------
@@ -27,16 +32,16 @@ changePixelInImage image y x p = ((select d0 d1 y image) ++ ((replace x p (at y 
 -}
 
 
-changePixelInImage :: (KnownNat n1, KnownNat n2) 
+changePixelInImage :: (KnownNat n1, KnownNat n2, Enum a, Num a) 
   => Vec n1 (Vec n2 Pixel) 
-  -> Int 
-  -> Int 
+  -> a 
+  -> a 
   -> Pixel 
   -> Vec n1 (Vec n2 Pixel)
 changePixelInImage i row col c = replace k (replace l c (i!!k)) i
   where 
-    k = row - 1
-    l = col - 1
+    k = fromEnum (row - 1)
+    l = fromEnum (col - 1)
 
 -----------------------------------------------------------------------------------------
 -- Assignment 5, Center of mass of entire image
@@ -72,7 +77,7 @@ comCols i = comRows (transpose i)
 com :: (KnownNat n1, KnownNat n2, Num a)
   => Vec n1 (Vec n2 Pixel)
   -> (a, a)
-com i = (comCols i, comRows i)
+com i = (comRows i, comCols i)
 
 imageWithCom :: (KnownNat n1, KnownNat n2)
   => Pixel
@@ -87,25 +92,50 @@ imageWithCom c i = changePixelInImage k (comRows k) (comCols k) c
 comParts i = unblocks2D (lengthS i) k
   where k = map (imageWithCom 2) (blocks2D d8 i)
 
-comPartsWB i =  head (addBorders 2 ((comParts i):>Nil))
+comPartsWB s i =  head (addBorders 2 ((comParts i):>Nil))
 
 -----------------------------------------------------------------------------------------
 -- Assignment 7 Time-area trade-off
 -----------------------------------------------------------------------------------------
 
+{-comTest :: (KnownNat n1, KnownNat n2, Num a, Enum a) 
+  => (StateCOM, a)           -- (state, com)
+  -> Vec n1 (Vec n2 Pixel)   -- (original image)
+  -> ((StateCOM, a), (a, a))
+comTest s i = (s', o)
+  where 
+    s' = case fst s of
+      CalCOMRows -> (CalCOMCols, (comRows i))
+      CalCOMCols -> (CalCOMRows, snd s)
+    o = case fst s of
+      CalCOMRows -> (0, 0)
+      CalCOMCols -> (snd s, comCols i)-}
 
-topEntity :: Vec 8 (Vec 8 Pixel) -> Vec 8 (Vec 8 Pixel)
-topEntity = (imageWithCom 2)
+comTest :: (KnownNat n1, KnownNat n2, Num a, Enum a) 
+  => (StateCOM, a)           -- (state, com)
+  -> Vec n1 (Vec n2 Pixel)   -- (original image)
+  -> ((StateCOM, a), (a, a))
+comTest s i = (s', o)
+  where 
+    s' = case fst s of
+      CalCOMRows -> (CalCOMCols, (comRows i))
+      CalCOMCols -> (CalCOMRows, snd s)
+    o = case fst s of
+      CalCOMRows -> (0, 0)
+      CalCOMCols -> (snd s, comCols i)
 
-------
--- TESTING
-----
-testVector = 
-  (0:>0:>0:>0:>0:>0:>0:>0:>Nil):>(0:>0:>0:>0:>0:>0:>0:>0:>Nil):>(0:>0:>0:>0:>0:>0:>0:>0:>Nil):>(0:>0:>0:>0:>0:>0:>0:>0:>Nil):>
-  (0:>0:>0:>0:>0:>0:>0:>0:>Nil):>(0:>0:>0:>0:>0:>0:>0:>0:>Nil):>(0:>0:>0:>0:>0:>0:>0:>0:>Nil):>(0:>0:>0:>0:>0:>0:>0:>0:>Nil):>Nil
+-- mcom i = mealy comTest (CalCOMRows, 0) i
 
-test :: (KnownNat n1, KnownNat n2) => Vec n1 (Vec n2 Pixel) -> Int -> Int -> Pixel -> Vec n1 (Vec n2 Pixel)
-test i row col c = replace row (replace col c (i!!row)) i
+topEntity :: (Enum a, Num a)
+  => Clk
+  -> Rst
+  -> Sig (Vec 8 (Vec 8 Pixel))  -- input image
+  -> Sig ((a, a)) -- return
+topEntity clk rst i = exposeClockReset (mealy comTest (CalCOMRows, 0)) clk rst i
 
---test2 :: Integer -> Int
---test2 b = (b :: Int)
+{-topEntity :: Vec 8 (Vec 8 Pixel) -> Vec 8 (Vec 8 Pixel)
+topEntity = (imageWithCom 2)-}
+
+blackWhiteImage = threshold 128 image
+imagePart = head (blocks2D d8 blackWhiteImage)
+testVector = toList (concat (map (replicate d2) (blocks2D d8 blackWhiteImage)))
