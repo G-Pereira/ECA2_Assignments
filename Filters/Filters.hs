@@ -25,60 +25,44 @@ type Sig = Signal System
 -- FIR1 N = 6 
 -----------------------------------------------------------
 
-type Value_6 = Signed 8
-fir1_6 :: Vec 6 Value_6 -> Vec 6 Value_6 -> Value_6
-fir1_6 x h = foldl(+) 0 (zipWith(*) x h)
+fir h x = foldl (+) 0 (zipWith (*) x h)
+fir1_6 = fir
 
 -----------------------------------------------------------
 -- Assignment 2
 -- FIR1 N = 100 
 -----------------------------------------------------------
 
-type Value_100 = SFixed 5 13
-fir1_100 :: Vec 100 Value_100 -> Value_100
-fir1_100 x = foldl(+) 0 (zipWith(*) x filterCoef)
+coef = (0.00641067965727758:> 0.00638175172557373:> 0.00619115765981477:> 0.00583664072411354:> 0.00531966453546420:> 0.00464552212014080:> 0.00382336686588339:> 0.00286616281883657:> 0.00179055342648450:> 0.000616649526696630:> -0.000632260907119334:> -0.00193007707010667:> -0.00324831786134811:> -0.00455661530591583:> -0.00582326012243003:> -0.00701578945981511:> -0.00810160578123223:> -0.00904861504126774:> -0.00982587170445480:> -0.0104042178044341:> -0.0107569031537370:> -0.0108601739891343:> -0.0106938177760437:> -0.0102416525913690:> -0.00949195044563220:> -0.00843778507535779:> -0.00707729611344373:> -0.00541386310224685:> -0.00345618452088869:> -0.00121825882103480:> 0.00128073363236992:> 0.00401664687562740:> 0.00696068113146024:> 0.0100797853736926:> 0.0133371441513720:> 0.0166927404388704:> 0.0201039847163911:> 0.0235263991072961:> 0.0269143442339414:> 0.0302217755271657:> 0.0334030150563411:> 0.0364135245518031:> 0.0392106651788269:> 0.0417544297955815:> 0.0440081338842948:> 0.0459390520769479:> 0.0475189881902650:> 0.0487247679202216:> 0.0495386447994046:> 0.0499486116624269:> 0.0499486116624269:> 0.0495386447994046:> 0.0487247679202216:> 0.0475189881902650:> 0.0459390520769479:> 0.0440081338842948:> 0.0417544297955815:> 0.0392106651788269:> 0.0364135245518031:> 0.0334030150563411:> 0.0302217755271657:> 0.0269143442339414:> 0.0235263991072961:> 0.0201039847163911:> 0.0166927404388704:> 0.0133371441513720:> 0.0100797853736926:> 0.00696068113146024:> 0.00401664687562740:> 0.00128073363236992:> -0.00121825882103480:> -0.00345618452088869:> -0.00541386310224685:> -0.00707729611344373:> -0.00843778507535779:> -0.00949195044563220:> -0.0102416525913690:> -0.0106938177760437:> -0.0108601739891343:> -0.0107569031537370:> -0.0104042178044341:> -0.00982587170445480:> -0.00904861504126774:> -0.00810160578123223:> -0.00701578945981511:> -0.00582326012243003:> -0.00455661530591583:> -0.00324831786134811:> -0.00193007707010667:> -0.000632260907119334:> 0.000616649526696630:> 0.00179055342648450:> 0.00286616281883657:> 0.00382336686588339:> 0.00464552212014080:> 0.00531966453546420:> 0.00583664072411354:> 0.00619115765981477:> 0.00638175172557373:> 0.00641067965727758 :> Nil)
+
+fir1_100 = fir coef
 
 -----------------------------------------------------------
 -- Assignment 3
 -- FIR2 N = 6
 -----------------------------------------------------------
 
-type Value2_6 = Signed 8
-fir2_6_f :: Vec 6 Value2_6 -> Value2_6 -> (Vec 6 Value2_6, Value2_6)
-fir2_6_f u x = (u', z) where
+fir_reg h u x = (u', z) where
     u' = x +>> u
-    z = foldl(+) 0 (zipWith(*) u (1:>2:>3:>4:>5:>6:>Nil))
-
-fir2_6 = mealy fir2_6_f (repeat 0)
+    z = fir h u
 
 -----------------------------------------------------------
 -- Assignment 4
 -- FIR2 N = 100
 -----------------------------------------------------------
 
-type Value2_100 = SFixed 5 13
-fir2_100_f :: Vec 100 Value2_100 -> Value2_100 -> (Vec 100 Value2_100, Value2_100)
-fir2_100_f u x = (u', z) where
-    u' = x +>> u
-    z = foldl (+) 0 (zipWith (*) u filterCoef)
-
-fir2_100 = mealy fir2_100_f inputSignal
+-- Uses same structure as Assignment 3 (fir_reg)
+-- Check the modified call at the bottom
 
 -----------------------------------------------------------
 -- Assignment 5
 -- FIR3 N = 6
 -----------------------------------------------------------
 
-type Value3_6 = Signed 8
-
-fir3_6_f :: Vec 6 Value3_6 -> Value3_6 -> (Vec 6 Value3_6, Value3_6)
-fir3_6_f u x = (u', z) where
+fir3_6_f h u x = (u', z) where
     u' = x +>> u
-    h = (1 :> 2 :> 3 :> Nil)
-    w = foldl (+) 0 (zipWith (*) (take d3 u) h)
-    z = foldl (+) w (zipWith (*) (take d3 (reverse u))  h)
-
-fir3_6 = mealy fir3_6_f (repeat 0)
+    w = zipWith (+) (take d3 u) (take d3 (reverse u))
+    z = fir h w
 
 -----------------------------------------------------------
 -- Assignment 6
@@ -104,22 +88,49 @@ fir3_6 = mealy fir3_6_f (repeat 0)
 -- topEntity's
 -----------------------------------------------------------
 -- Assignment 1
---topEntity = fir1_6
+-- type Value = Signed 8
+-- type Vector = Vec 6 Value
+
+-- topEntity :: Vector -> Vector -> Value
+-- topEntity = fir1_6
 
 -- Assignment 2
---topEntity = fir1_100
+-- type Value = SFixed 5 13
+-- type Vector = Vec 100 Value
+
+-- topEntity :: Vector -> Value
+-- topEntity = fir1_100
 
 -- Assignment 3
---topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
---topEntity clk rst = exposeClockReset fir2_6 clk rst
+-- type Value = Signed 8
+-- type Vector = Vec 6 Value
+-- fir_reg :: Vector -> Vector -> Value -> (Vector, Value)
+
+-- fir2_6 = mealy (fir_reg (1:>2:>3:>3:>2:>1:>Nil)) (repeat 0)
+
+-- topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
+-- topEntity clk rst = exposeClockReset fir2_6 clk rst
 
 -- Assignment 4
---topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
---topEntity clk rst = exposeClockReset fir2_100 clk rst
+-- type Value = SFixed 5 13
+-- type Vector = Vec 100 Value
+-- fir_reg :: Vector -> Vector -> Value -> (Vector, Value)
+
+-- fir2_100 = mealy (fir_reg filterCoef) (repeat 0)
+
+-- topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
+-- topEntity clk rst = exposeClockReset fir2_100 clk rst
 
 -- Assignment 5
-topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
-topEntity clk rst = exposeClockReset fir3_6 clk rst
+-- type Value = Signed 8
+-- type Vector = Vec 6 Value
+-- type Vector_half = Vec 3 Value
+-- fir3_6_f :: Vector_half -> Vector -> Value -> (Vector, Value)
+
+-- fir3_6 = mealy (fir3_6_f (1:>2:>3:>Nil)) (repeat 0)
+
+-- topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
+-- topEntity clk rst = exposeClockReset fir3_6 clk rst
 
 -- Assignment 6
 --topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
