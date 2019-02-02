@@ -26,7 +26,7 @@ type Sig = Signal System
 -----------------------------------------------------------
 
 fir h x = foldl (+) 0 (zipWith (*) x h)
-fir1_6 = fir
+fir1_6 = fir (1:>2:>3:>4:>5:>6:>Nil)
 
 -----------------------------------------------------------
 -- Assignment 2
@@ -72,11 +72,9 @@ fir_sym h u x = (u', z) where
 -- FIR3' N = 6
 -----------------------------------------------------------
 
-
--- this would work for non symetrical (regular) coeficients 
 fir_sym_t h u x = (u', z) where
     w = map (*x) h
-    u'' = zipWith (+) w h
+    u'' = (zipWith (+) w (takeI (0:>u)) ++ (zipWith (+)  w (takeI (reverse u))))
     u' = init u''
     z = last u''
 
@@ -97,7 +95,7 @@ fir_sym_t h u x = (u', z) where
 -- type Value = Signed 8
 -- type Vector = Vec 6 Value
 
--- topEntity :: Vector -> Vector -> Value
+-- topEntity :: Vector -> Value
 -- topEntity = fir1_6
 
 -- Assignment 2
@@ -153,7 +151,7 @@ fir_sym_t h u x = (u', z) where
 
 -- Assignment 7
 type Value = Signed 8
-type Vector = Vec 6 Value
+type Vector = Vec 5 Value
 type Vector_half = Vec 3 Value
 
 fir_sym_t :: Vector_half -> Vector -> Value -> (Vector, Value)
