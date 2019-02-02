@@ -57,10 +57,9 @@ f0hof x = foldl (helper x) ((2+x) :: Value) (6:>6:>8:>Nil)
 -- Assignment 4
 -- f0mealy
 ----------------------------------------------------------
-f0helper s (x, y) = (s', z)
+f0helper s (x, y) = (s', s')
   where
-    s'= z*(x+y)
-    z = s'
+    s'= s*(x+y)
 
 f0mealy x = mealy f0helper 1 x
 
