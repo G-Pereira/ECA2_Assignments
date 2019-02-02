@@ -3,7 +3,7 @@ import Clash.Prelude
 
 import qualified Data.List as L
 
-type Pixel = Unsigned 16
+type Pixel = Unsigned 8
 
 path = "../images/"
 filename = "clash_out.pgm"
