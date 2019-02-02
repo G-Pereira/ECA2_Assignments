@@ -123,17 +123,6 @@ comTest s i = (s', o)
     c = comCols i
     r = comRows i
 
-{-
-fstMachine s i = (s', o)
-  where
-    s' = case s of
-      True  -> False
-      False -> True
-    o = case s of
-      True  -> 0
-      False -> comCols i
--}
-
 mcom i = mealy comTest (StartCal, (0,0)) i
 
 {-topEntity :: Vec 8 (Vec 8 Pixel) -> Vec 8 (Vec 8 Pixel)
