@@ -26,7 +26,7 @@ type Sig = Signal System
 -----------------------------------------------------------
 
 fir h x = foldl (+) 0 (zipWith (*) x h)
-fir1_6 = fir (1:>2:>3:>4:>5:>6:>Nil)
+fir1_6 = fir ((1::Signed 8):>2:>3:>4:>5:>6:>Nil)
 
 -----------------------------------------------------------
 -- Assignment 2
@@ -73,15 +73,23 @@ fir_sym h u x = (u', z) where
 -----------------------------------------------------------
 
 fir_sym_t h u x = (u', z) where
-    w = map (*x) h
-    u'' = (zipWith (+) w (takeI (0:>u)) ++ (zipWith (+)  w (takeI (reverse u))))
-    u' = init u''
-    z = last u''
+    m = map (*x) h
+    w = m ++ (reverse m)
+    s = (zipWith (+) (init w) (tail u)) ++ ((last w):>Nil)
+    u' = s
+    z = head u
 
 -----------------------------------------------------------
 -- Assignment 8
 -- IIR
 -----------------------------------------------------------
+
+fir_sym_t_i h u x = (u', z) where
+    m = map (*x) h
+    w = m ++ (reverse m)
+    s = (zipWith (+) (init w) (tail u)) ++ ((last w):>Nil)
+    u' = s
+    z = head u
 
 -----------------------------------------------------------
 -- Assignment 9
@@ -134,8 +142,8 @@ fir_sym_t h u x = (u', z) where
 
 -- fir3_6 = mealy (fir_sym (1:>2:>3:>Nil)) (repeat 0)
 
---topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
---topEntity clk rst = exposeClockReset fir3_6 clk rst
+-- topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
+-- topEntity clk rst = exposeClockReset fir3_6 clk rst
 
 -- Assignment 6
 -- type Value = SFixed 5 13
@@ -150,20 +158,28 @@ fir_sym_t h u x = (u', z) where
 -- topEntity clk rst = exposeClockReset fir3_100 clk rst
 
 -- Assignment 7
-type Value = Signed 8
-type Vector = Vec 5 Value
+-- type Value = Signed 8
+-- type Vector = Vec 6 Value
+-- type Vector_half = Vec 3 Value
+
+-- fir_sym_t :: Vector_half -> Vector -> Value -> (Vector, Value)
+
+-- fir3t_6 = mealy (fir_sym_t (1:>2:>3:>Nil)) (repeat 0)
+
+-- topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
+-- topEntity clk rst = exposeClockReset fir3t_6 clk rst
+
+-- Assignment 8
+type Value = SFixed 5 13
+type Vector = Vec 6 Value
 type Vector_half = Vec 3 Value
 
 fir_sym_t :: Vector_half -> Vector -> Value -> (Vector, Value)
 
 fir3t_6 = mealy (fir_sym_t (1:>2:>3:>Nil)) (repeat 0)
 
-topEntity :: Clk -> Rst -> Sig (Signed 8) -> Sig (Signed 8)
-topEntity clk rst = exposeClockReset fir3t_6 clk rst
-
--- Assignment 8
---topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
---topEntity clk rst = exposeClockReset iir1 clk rst
+topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
+topEntity clk rst = exposeClockReset iir1 clk rst
 
 -- Assignment 9
 --topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
