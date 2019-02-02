@@ -10,3 +10,5 @@ figure(1)
 plot(x,input)
 hold on
 plot(x,output)
+
+legend('in','out')

@@ -84,6 +84,7 @@ fir_sym_t h u x = (u', z) where
 -- IIR
 -----------------------------------------------------------
 
+-- Not finished
 iir b a u x = (u', z) where
     m = map (*x) b
     s = (zipWith (+) (init m) (tail u)) ++ ((last m):>Nil)
@@ -96,6 +97,8 @@ iir b a u x = (u', z) where
 -- Assignment 9
 -- IIR
 -----------------------------------------------------------
+
+--Not implemented
 
 -----------------------------------------------------------
 -- topEntity's
@@ -171,14 +174,14 @@ iir b a u x = (u', z) where
 -- topEntity clk rst = exposeClockReset fir3t_6 clk rst
 
 -- Assignment 8
-type Value = SFixed 5 13
+-- type Value = SFixed 5 13
 
 --iir :: Vec 4 Value -> Vec 3 Value -> Vec 4 Value -> Value -> (Vec 3 Value, Value)
 
-iir1 = mealy (iir (0.0623348:>0.1870044:>0.1870044:>0.0623348:>Nil) (0.9853304:>(-0.5929545):>0.1089457:>Nil)) (repeat 0)
+-- iir1 = mealy (iir (0.0623348:>0.1870044:>0.1870044:>0.0623348:>Nil) (0.9853304:>(-0.5929545):>0.1089457:>Nil)) (repeat 0)
 
-topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
-topEntity clk rst = exposeClockReset iir1 clk rst
+-- topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
+-- topEntity clk rst = exposeClockReset iir1 clk rst
 
 -- Assignment 9
 --topEntity :: Clk -> Rst -> Sig (SFixed 5 13) -> Sig (SFixed 5 13)
