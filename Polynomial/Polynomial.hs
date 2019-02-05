@@ -74,8 +74,8 @@ f0mealy x = mealy f0helper 1 x
 --topEntity = f0f
 
 -- Assignment 3
---topEntity = f0hof
+topEntity = f0hof
 
 -- Assignment 4
-topEntity :: Clk -> Rst -> Sig (Value, Value) -> Sig Value
-topEntity clk rst x = exposeClockReset f0mealy clk rst x
+--topEntity :: Clk -> Rst -> Sig (Value, Value) -> Sig Value
+--topEntity clk rst x = exposeClockReset f0mealy clk rst x
