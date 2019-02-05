@@ -54,7 +54,9 @@ alu op x y
   | op == Mul = x * y
   | otherwise = 0
 
-core :: (KnownNat n1, KnownNat n2, KnownNat n3, Enum a, Num a) 
+-- It is unclear what is considered to be an input. The code below assumes a hardcoded program and a random input
+-- It is tested with: simulate coreMealy [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]
+{-core :: (KnownNat n1, KnownNat n2, KnownNat n3, Enum a, Num a) 
   => Vec n2 Instr
   -> (a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool))
   -> Bool
@@ -88,8 +90,27 @@ core prog (pc, stack, heap, (reg, valid)) en = ((pc', stack', heap', (reg', vali
 coreMealy en = mealy (core program1) (0, (replicate d40 0), 10:>11:>Nil ++ (replicate d38 0), (-1, False)) en
 
 topEntity :: Clk -> Rst -> Sig Bool -> Sig Signed12
-topEntity clk rst en = exposeClockReset coreMealy clk rst en
+topEntity clk rst en = exposeClockReset coreMealy clk rst en-}
 
--- Test with: test = sim (core program1) (0, [], [10, 11], (-1, False)) $ repeat 1
--- We believe program 2 to be invalid as it pops an element in the third instruction, 
--- yielding an invalid multiplication
+core (stack, heap, (reg, valid)) instr = ((stack', heap', (reg', valid')), out)
+  where
+    heap' = heap 
+    stack' = case instr of
+      Push v -> (value heap stack v) +>> stack
+      Calc a -> if valid == True then (replace 0 (alu a reg (stack!!0)) stack) else stack <<+ (last stack)
+      Pop -> stack <<+ (last stack)
+      otherwise -> stack
+    reg' = case instr of
+      Calc a -> if valid == True then -1 else (stack!!0)
+      otherwise -> -1
+    valid' = case instr of
+      Calc a -> not valid
+      otherwise -> False
+    out = case instr of
+      Send v -> value heap stack v
+      otherwise -> -1
+
+coreMealy instr = mealy core ((replicate d40 0), 10:>11:>Nil ++ (replicate d38 0), (-1, False)) instr
+
+topEntity :: Clk -> Rst -> Sig Instr -> Sig Signed12
+topEntity clk rst instr = exposeClockReset coreMealy clk rst instr
