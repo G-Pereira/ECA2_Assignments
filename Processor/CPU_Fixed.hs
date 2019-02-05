@@ -19,9 +19,12 @@ data Instr = Push Value | Calc Opc | Send Value | Pop
   deriving (Eq, Show)
 
 program1 =
-    Push (Stat 2):> Push (Addr 0):> Calc Mul:> Push (Stat 3):>
-    Push (Stat 4):> Push (Addr 1):> Calc Add:> Calc Mul:> Calc Add:>
-    Push (Stat 12):> Push (Stat 5):> Calc Add:> Calc Mul:> Send Top :> Nil
+    Push (Stat 2):> Push (Addr 0):> Calc Mul:> Send Top :> 
+    Push (Stat 3):> Push (Stat 4):> Push (Addr 1):> Calc Add :> Send Top :> 
+    Calc Mul :> Send Top :> 
+    Calc Add :> Send Top :> 
+    Push (Stat 12):> Push (Stat 5):> Calc Add :> Send Top :> 
+    Calc Mul:> Send Top :> Nil
 
 program2 = 
   [
@@ -51,23 +54,17 @@ alu op x y
   | op == Mul = x * y
   | otherwise = 0
 
---core :: (KnownNat n1, KnownNat n2, KnownNat n3, Enum a, Num a) 
---  => Vec n1 Instr
---  -> (a, Vec n3 Signed12, Vec n2 Signed12, (Signed12, Bool))
---  -> ((a, Vec n3 Signed12, Vec n2 Signed12, (Signed12, Bool)), Signed12)
-
---core
---  :: (KnownNat n1, KnownNat n2, KnownNat n3, Enum a, Num a) =>
---     Vec n2 Instr
---     -> (a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool))
---     -> ((a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool)),
---         Signed12)
-core prog (pc, stack, heap, (reg, valid)) i = ((pc', stack', heap', (reg', valid')), out)
+core :: (KnownNat n1, KnownNat n2, KnownNat n3, Enum a, Num a) 
+  => Vec n2 Instr
+  -> (a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool))
+  -> Bool
+  -> ((a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool)), Signed12)
+core prog (pc, stack, heap, (reg, valid)) en = ((pc', stack', heap', (reg', valid')), out)
   where
     heap' = heap 
     stack' = case instr of
       Push v -> (value heap stack v) +>> stack
-      Calc a -> if valid == True then (alu a reg (stack!!0)) +>> stack else stack <<+ (last stack)
+      Calc a -> if valid == True then (replace 0 (alu a reg (stack!!0)) stack) else stack <<+ (last stack)
       Pop -> stack <<+ (last stack)
       otherwise -> stack
     reg' = case instr of
@@ -83,26 +80,15 @@ core prog (pc, stack, heap, (reg, valid)) i = ((pc', stack', heap', (reg', valid
             then pc + 1 
             else pc
         otherwise -> pc + 1
-    i' = i
     out = case instr of
       Send v -> value heap stack v
       otherwise -> -1
     instr = prog!!pc
 
-coreMealy p i = mealy (core p) (0, (replicate d40 0), 10:>11:>Nil ++ (replicate d38 0), (-1, False)) i
+coreMealy en = mealy (core program1) (0, (replicate d40 0), 10:>11:>Nil ++ (replicate d38 0), (-1, False)) en
 
---topEntity ::
---  Clk
---  -> Rst
---  -> Vec 40 Instr
---  -> (Signed12, Vec 40 Signed12, Vec 40 Signed12, (Signed12, Bool))
---  -> ((Signed12, Vec 40 Signed12, Vec 40 Signed12, (Signed12, Bool)), Signed12)
-topEntity ::
-     Clk
-     -> Rst
-     -> Sig Signed12
-     -> Sig Signed12
-topEntity clk rst i = exposeClockReset (coreMealy program1) clk rst i
+topEntity :: Clk -> Rst -> Sig Bool -> Sig Signed12
+topEntity clk rst en = exposeClockReset coreMealy clk rst en
 
 -- Test with: test = sim (core program1) (0, [], [10, 11], (-1, False)) $ repeat 1
 -- We believe program 2 to be invalid as it pops an element in the third instruction, 
