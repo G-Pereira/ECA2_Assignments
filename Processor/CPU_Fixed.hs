@@ -18,31 +18,19 @@ data Value = Stat Signed12 | Addr Signed12 | Top
 data Instr = Push Value | Calc Opc | Send Value | Pop
   deriving (Eq, Show)
 
-program1 =
-    Push (Stat 2):> Push (Addr 0):> Calc Mul:> Send Top :> 
-    Push (Stat 3):> Push (Stat 4):> Push (Addr 1):> Calc Add :> Send Top :> 
-    Calc Mul :> Send Top :> 
-    Calc Add :> Send Top :> 
-    Push (Stat 12):> Push (Stat 5):> Calc Add :> Send Top :> 
-    Calc Mul:> Send Top :> Nil
+program = 
+  Push (Stat 2) :> Push (Addr 0) :> Pop :> Calc Mul :> Push (Stat 3) :>
+  Push (Stat 4) :> Push (Addr 1) :> Pop :> Calc Add :> Pop :> Calc Mul :> Pop :>
+  Calc Add :> Push (Stat 12) :> Push (Stat 5) :> Pop :> Calc Add :> Pop :>
+  Calc Mul :> Send Top :> Push (Stat 2) :> Send Top :> Pop :> Send Top :> Nil
 
-program2 = 
-  [
-    Push (Stat 2), Push (Addr 0), Pop, Calc Mul, Push (Stat 3),
-    Push (Stat 4), Push (Addr 1), Pop, Calc Add, Pop, Calc Mul, Pop,
-    Calc Add, Push (Stat 12), Push (Stat 5), Pop, Calc Add, Pop,
-    Calc Mul, Send Top, Push (Stat 2), Send Top, Pop, Send Top
-  ]
+stackVector = replicate d10 0
+heapVector =  10:>11:>Nil ++ (replicate d8 0)
 
-value :: (KnownNat n1, KnownNat n2) 
-  => Vec n1 Signed12 
-  -> Vec (n2 + 1) Signed12 
-  -> Value 
-  -> Signed12
-value h s v = case v of
+value h (s, sp) v = case v of
   Stat c -> c
   Addr addr -> h!!addr
-  Top -> head s
+  Top -> s!!sp
 
 alu :: (Num a)
   => Opc
@@ -54,63 +42,28 @@ alu op x y
   | op == Mul = x * y
   | otherwise = 0
 
--- It is unclear what is considered to be an input. The code below assumes a hardcoded program and a random input
--- It is tested with: simulate coreMealy [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]
-{-core :: (KnownNat n1, KnownNat n2, KnownNat n3, Enum a, Num a) 
-  => Vec n2 Instr
-  -> (a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool))
-  -> Bool
-  -> ((a, Vec (n1 + 1) Signed12, Vec n3 Signed12, (Signed12, Bool)), Signed12)
-core prog (pc, stack, heap, (reg, valid)) en = ((pc', stack', heap', (reg', valid')), out)
+-- Testing: test = simulate coreMealy (toList (replicate (lengthS program) True))
+core prog (pc, (stack, spntr), heap, reg) tick = ((pc', (stack', spntr'), heap', reg'), out)
   where
     heap' = heap 
     stack' = case instr of
-      Push v -> (value heap stack v) +>> stack
-      Calc a -> if valid == True then (replace 0 (alu a reg (stack!!0)) stack) else stack <<+ (last stack)
-      Pop -> stack <<+ (last stack)
+      Push v    -> replace (spntr') (value heap (stack, spntr) v) stack
+      Calc a    -> replace (spntr') (alu a reg (stack!!spntr)) stack
       otherwise -> stack
+    spntr' = case instr of
+      Push v    -> if spntr == 0 then (length stack) - 1 else spntr - 1
+      Pop       -> mod (spntr + 1) (length stack)
+      otherwise -> spntr
     reg' = case instr of
-      Calc a -> if valid == True then -1 else (stack!!0)
-      otherwise -> -1
-    valid' = case instr of
-      Calc a -> not valid
-      otherwise -> False
-    pc' = 
-      case instr of
-        Calc a -> 
-          if valid == True 
-            then pc + 1 
-            else pc
-        otherwise -> pc + 1
+      Pop       -> stack!!spntr
+      otherwise -> reg
+    pc' = if tick == True then pc + 1 else pc
     out = case instr of
-      Send v -> value heap stack v
+      Send v    -> value heap (stack, spntr) v
       otherwise -> -1
     instr = prog!!pc
 
-coreMealy en = mealy (core program1) (0, (replicate d40 0), 10:>11:>Nil ++ (replicate d38 0), (-1, False)) en
+coreMealy en = mealy (core program) (0, (stackVector, 0), heapVector, -1) en
 
 topEntity :: Clk -> Rst -> Sig Bool -> Sig Signed12
-topEntity clk rst en = exposeClockReset coreMealy clk rst en-}
-
-core (stack, heap, (reg, valid)) instr = ((stack', heap', (reg', valid')), out)
-  where
-    heap' = heap 
-    stack' = case instr of
-      Push v -> (value heap stack v) +>> stack
-      Calc a -> if valid == True then (replace 0 (alu a reg (stack!!0)) stack) else stack <<+ (last stack)
-      Pop -> stack <<+ (last stack)
-      otherwise -> stack
-    reg' = case instr of
-      Calc a -> if valid == True then -1 else (stack!!0)
-      otherwise -> -1
-    valid' = case instr of
-      Calc a -> not valid
-      otherwise -> False
-    out = case instr of
-      Send v -> value heap stack v
-      otherwise -> -1
-
-coreMealy instr = mealy core ((replicate d40 0), 10:>11:>Nil ++ (replicate d38 0), (-1, False)) instr
-
-topEntity :: Clk -> Rst -> Sig Instr -> Sig Signed12
-topEntity clk rst instr = exposeClockReset coreMealy clk rst instr
+topEntity clk rst en = exposeClockReset coreMealy clk rst en
