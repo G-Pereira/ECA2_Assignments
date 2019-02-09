@@ -24,9 +24,6 @@ program =
   Calc Add :> Push (Stat 12) :> Push (Stat 5) :> Pop :> Calc Add :> Pop :>
   Calc Mul :> Send Top :> Push (Stat 2) :> Send Top :> Pop :> Send Top :> Nil
 
-stackVector = replicate d10 0
-heapVector =  10:>11:>Nil ++ (replicate d8 0)
-
 value h (s, sp) v = case v of
   Stat c -> c
   Addr addr -> h!!addr
@@ -42,8 +39,12 @@ alu op x y
   | op == Mul = x * y
   | otherwise = 0
 
--- Testing: test = simulate coreMealy (toList (replicate (lengthS program) True))
-core prog (pc, (stack, spntr), heap, reg) tick = ((pc', (stack', spntr'), heap', reg'), out)
+core :: (KnownNat n1, KnownNat n2, KnownNat n3) 
+  => (Vec n1 Instr, Signed12, Signed12)
+  -> (Signed12, (Vec n2 Signed12, Signed12), Vec n3 Signed12, Signed12)
+  -> Bool
+  -> ((Signed12, (Vec n2 Signed12, Signed12), Vec n3 Signed12, Signed12), Signed12)
+core (prog, ssize, hsize) (pc, (stack, spntr), heap, reg) tick = ((pc', (stack', spntr'), heap', reg'), out)
   where
     heap' = heap 
     stack' = case instr of
@@ -51,19 +52,24 @@ core prog (pc, (stack, spntr), heap, reg) tick = ((pc', (stack', spntr'), heap',
       Calc a    -> replace (spntr') (alu a reg (stack!!spntr)) stack
       otherwise -> stack
     spntr' = case instr of
-      Push v    -> if spntr == 0 then (length stack) - 1 else spntr - 1
-      Pop       -> mod (spntr + 1) (length stack)
+      Push v    -> if spntr == 0 then ssize - 1 else spntr - 1
+      Pop       -> mod (spntr + 1) ssize
       otherwise -> spntr
     reg' = case instr of
       Pop       -> stack!!spntr
       otherwise -> reg
     pc' = if tick == True then pc + 1 else pc
     out = case instr of
-      Send v    -> value heap (stack, spntr) v
+      Send v    -> stack'!!spntr'
       otherwise -> -1
     instr = prog!!pc
 
-coreMealy en = mealy (core program) (0, (stackVector, 0), heapVector, -1) en
+coreMealy en = mealy (core (program, ssize, hsize)) (0, (stackVector, 0), heapVector, -1) en
+  where
+    ssize = 10
+    hsize = 10
+    stackVector = replicate d10 0
+    heapVector =  10:>11:>Nil ++ replicate d8 0
 
 topEntity :: Clk -> Rst -> Sig Bool -> Sig Signed12
 topEntity clk rst en = exposeClockReset coreMealy clk rst en
