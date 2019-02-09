@@ -66,10 +66,10 @@ core (prog, ssize, hsize) (pc, (stack, spntr), heap, reg) tick = ((pc', (stack',
 
 coreMealy en = mealy (core (program, ssize, hsize)) (0, (stackVector, 0), heapVector, -1) en
   where
-    ssize = 10
-    hsize = 10
+    ssize = 4
+    hsize = 2
     stackVector = replicate d10 0
-    heapVector =  10:>11:>Nil ++ replicate d8 0
+    heapVector =  10:>11:>Nil
 
 topEntity :: Clk -> Rst -> Sig Bool -> Sig Signed12
 topEntity clk rst en = exposeClockReset coreMealy clk rst en
